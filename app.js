@@ -56,7 +56,7 @@ if (!window.supabase || typeof window.supabase.createClient !== "function") {
 } else if (!SUPABASE_URL || !SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.includes("PASTE_")) {
   fatal("Supabase keys are missing in app.js. Paste the sb_publishable key.");
 } else {
-  setStatus("JS loaded.");
+  setStatus("");
 
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -131,5 +131,5 @@ if (!window.supabase || typeof window.supabase.createClient !== "function") {
   elBack.addEventListener("click", showHome);
 
   // 3) Load counts immediately
-  fetchCounts().then(() => setStatus("Ready.")).catch((e) => fatal(`Error: ${e?.message || e}`));
+  fetchCounts().then(() => setStatus("")).catch((e) => fatal(`Error: ${e?.message || e}`));
 }
