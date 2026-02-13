@@ -1,5 +1,5 @@
 const SUPABASE_URL = "https://dlhlauphqwsnchdrfbia.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_8MyeWigUStJN1vRZpJyQkg_cC5y7uPC";
+const SUPABASE_ANON_KEY = "sb_publishable_PDHGD4lP_shj-5L5mjUALg_dAzQjaLz";
 
 const PARK_ID = "jackson_playground_park";
 
