@@ -1,16 +1,12 @@
-// Paste your Supabase values here:
 const SUPABASE_URL = "https://dlhlauphqwsnchdrfbia.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_8MyeWigUStJN1vRZpJyQkg_cC5y7uPC";
 
 const PARK_ID = "jackson_playground_park";
 
-// Messages
 const MSG_YES =
   "I am sorry that entitled dog owners are once again illegally utilizing this park. It is unclear why they cannot go to the two nearby dog parks, but it is certainly not fair to the people who want to enjoy the park free of dog pee and feces.";
 const MSG_NO =
   "What a surprise! Looks like you got lucky not seeing a dog there today, but if you stick around for a bit you certainly will.";
-
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const elHome = document.getElementById("home");
 const elResult = document.getElementById("result");
@@ -23,17 +19,21 @@ const elToday = document.getElementById("todayCount");
 const elWeek = document.getElementById("weekCount");
 const elAlready = document.getElementById("alreadyNote");
 
+function setStatus(text) {
+  if (elStatus) elStatus.textContent = text || "";
+}
+
+function fatal(text) {
+  setStatus(text);
+  console.error(text);
+}
+
 function todayKeyLocal() {
-  // "YYYY-MM-DD" in user's local time. (Most users scanning QR in SF will be local.)
   const d = new Date();
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
-}
-
-function setStatus(text) {
-  elStatus.textContent = text || "";
 }
 
 function showResult(message, alreadySubmitted) {
@@ -50,84 +50,86 @@ function showHome() {
   setStatus("");
 }
 
-async function fetchCounts() {
-  // Today
-  const todayLocal = todayKeyLocal();
+// 1) Verify Supabase library is actually loaded
+if (!window.supabase || typeof window.supabase.createClient !== "function") {
+  fatal("Supabase failed to load. Check index.html script tag for the UMD build.");
+} else if (!SUPABASE_URL || !SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.includes("PASTE_")) {
+  fatal("Supabase keys are missing in app.js. Paste the sb_publishable key.");
+} else {
+  setStatus("JS loaded.");
 
-  const { data: todayRows, error: todayErr } = await supabase
-    .from("v_counts_today")
-    .select("local_date, total_count")
-    .eq("park_id", PARK_ID)
-    .eq("local_date", todayLocal)
-    .limit(1);
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  if (todayErr) throw todayErr;
+  async function fetchCounts() {
+    const todayLocal = todayKeyLocal();
 
-  // Week: find current Monday in local time, then query that week_start_local
-  const now = new Date();
-  const day = now.getDay(); // Sun=0, Mon=1...
-  const diffToMon = (day + 6) % 7; // 0 if Monday
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - diffToMon);
+    const { data: todayRows, error: todayErr } = await supabase
+      .from("v_counts_today")
+      .select("local_date, total_count")
+      .eq("park_id", PARK_ID)
+      .eq("local_date", todayLocal)
+      .limit(1);
 
-  const y = monday.getFullYear();
-  const m = String(monday.getMonth() + 1).padStart(2, "0");
-  const d = String(monday.getDate()).padStart(2, "0");
-  const weekStartLocal = `${y}-${m}-${d}`;
+    if (todayErr) throw todayErr;
 
-  const { data: weekRows, error: weekErr } = await supabase
-    .from("v_counts_week")
-    .select("week_start_local, total_count")
-    .eq("park_id", PARK_ID)
-    .eq("week_start_local", weekStartLocal)
-    .limit(1);
+    const now = new Date();
+    const day = now.getDay(); // Sun=0, Mon=1...
+    const diffToMon = (day + 6) % 7;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - diffToMon);
 
-  if (weekErr) throw weekErr;
+    const y = monday.getFullYear();
+    const m = String(monday.getMonth() + 1).padStart(2, "0");
+    const d = String(monday.getDate()).padStart(2, "0");
+    const weekStartLocal = `${y}-${m}-${d}`;
 
-  const todayCount = todayRows?.[0]?.total_count ?? 0;
-  const weekCount = weekRows?.[0]?.total_count ?? 0;
+    const { data: weekRows, error: weekErr } = await supabase
+      .from("v_counts_week")
+      .select("week_start_local, total_count")
+      .eq("park_id", PARK_ID)
+      .eq("week_start_local", weekStartLocal)
+      .limit(1);
 
-  elToday.textContent = String(todayCount);
-  elWeek.textContent = String(weekCount);
-}
+    if (weekErr) throw weekErr;
 
-async function submit(sawDog) {
-  setStatus("Submitting...");
-  elYes.disabled = true;
-  elNo.disabled = true;
-
-  try {
-    const key = `submitted:${PARK_ID}:${todayKeyLocal()}`;
-    const alreadySubmitted = localStorage.getItem(key) === "1";
-
-    if (!alreadySubmitted) {
-      const { error } = await supabase.from("sightings").insert([
-        {
-          park_id: PARK_ID,
-          saw_dog: sawDog,
-        },
-      ]);
-
-      if (error) throw error;
-
-      localStorage.setItem(key, "1");
-    }
-
-    await fetchCounts();
-    showResult(sawDog ? MSG_YES : MSG_NO, alreadySubmitted);
-    setStatus("");
-  } catch (e) {
-    console.error(e);
-    setStatus("Error. If this keeps happening, try again later.");
-  } finally {
-    elYes.disabled = false;
-    elNo.disabled = false;
+    elToday.textContent = String(todayRows?.[0]?.total_count ?? 0);
+    elWeek.textContent = String(weekRows?.[0]?.total_count ?? 0);
   }
+
+  async function submit(sawDog) {
+    setStatus("Submitting...");
+    elYes.disabled = true;
+    elNo.disabled = true;
+
+    try {
+      const key = `submitted:${PARK_ID}:${todayKeyLocal()}`;
+      const alreadySubmitted = localStorage.getItem(key) === "1";
+
+      if (!alreadySubmitted) {
+        const { error } = await supabase.from("sightings").insert([
+          { park_id: PARK_ID, saw_dog: sawDog },
+        ]);
+        if (error) throw error;
+        localStorage.setItem(key, "1");
+      }
+
+      await fetchCounts();
+      showResult(sawDog ? MSG_YES : MSG_NO, alreadySubmitted);
+      setStatus("");
+    } catch (e) {
+      console.error(e);
+      fatal(`Error: ${e?.message || e}`);
+    } finally {
+      elYes.disabled = false;
+      elNo.disabled = false;
+    }
+  }
+
+  // 2) Verify click handlers attach
+  elYes.addEventListener("click", () => submit(true));
+  elNo.addEventListener("click", () => submit(false));
+  elBack.addEventListener("click", showHome);
+
+  // 3) Load counts immediately
+  fetchCounts().then(() => setStatus("Ready.")).catch((e) => fatal(`Error: ${e?.message || e}`));
 }
-
-elYes.addEventListener("click", () => submit(true));
-elNo.addEventListener("click", () => submit(false));
-elBack.addEventListener("click", showHome);
-
-// Load counts on first visit (optional)
-fetchCounts().catch(() => {});
