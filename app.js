@@ -64,8 +64,8 @@ if (!window.supabase || typeof window.supabase.createClient !== "function") {
     const todayLocal = todayKeyLocal();
 
     const { data: todayRows, error: todayErr } = await supabase
-      .from("v_counts_today")
-      .select("local_date, total_count")
+      .from("v_yes_counts_today")
+      .select("local_date, total_yes")
       .eq("park_id", PARK_ID)
       .eq("local_date", todayLocal)
       .limit(1);
@@ -84,16 +84,16 @@ if (!window.supabase || typeof window.supabase.createClient !== "function") {
     const weekStartLocal = `${y}-${m}-${d}`;
 
     const { data: weekRows, error: weekErr } = await supabase
-      .from("v_counts_week")
-      .select("week_start_local, total_count")
+      .from("v_yes_counts_week")
+      .select("week_start_local, total_yes")
       .eq("park_id", PARK_ID)
       .eq("week_start_local", weekStartLocal)
       .limit(1);
 
     if (weekErr) throw weekErr;
 
-    elToday.textContent = String(todayRows?.[0]?.total_count ?? 0);
-    elWeek.textContent = String(weekRows?.[0]?.total_count ?? 0);
+    elToday.textContent = String(todayRows?.[0]?.total_yes ?? 0);
+    elWeek.textContent = String(weekRows?.[0]?.total_yes ?? 0);
   }
 
   async function submit(sawDog) {
