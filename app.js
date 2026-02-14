@@ -55,7 +55,6 @@ buildOdometer(weekOdoEl, 4);
 
 function setOdometer(el, value, digits = 4) {
   if (!el) return;
-  console.log("setOdometer called for", el.id, "with value:", value);
   const str = padNumber(value, digits);
 
   let children = Array.from(el.querySelectorAll(".odo-digit"));
@@ -73,20 +72,20 @@ function setOdometer(el, value, digits = 4) {
 
     if (next === current) continue;
 
-    console.log(`  Digit ${i}: ${current} -> ${next}`);
     front.textContent = current;
     back.textContent = next;
 
     card.classList.remove("odo-flip");
-    void card.offsetWidth;
+    void card.offsetWidth; // Force reflow
     card.classList.add("odo-flip");
 
     // Update the dataset immediately
     d.dataset.value = next;
     
-    // After animation completes, update front to match for next flip
+    // After animation completes, update front face and remove animation class
     setTimeout(() => {
       front.textContent = next;
+      card.classList.remove("odo-flip"); // Remove animation class so it's ready for next flip
     }, 350); // Animation is 320ms, so wait a bit longer
   }
 }
@@ -132,47 +131,57 @@ if (!window.supabase || typeof window.supabase.createClient !== "function") {
 
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+  let isFetching = false;
+
   async function fetchCounts() {
-    console.log("fetchCounts called");
-    const todayLocal = todayKeyLocal();
+    if (isFetching) {
+      console.log("Already fetching, skipping duplicate call");
+      return;
+    }
+    
+    isFetching = true;
+    try {
+      const todayLocal = todayKeyLocal();
 
-    const { data: todayRows, error: todayErr } = await supabase
-      .from("v_yes_counts_today")
-      .select("local_date, total_yes")
-      .eq("park_id", PARK_ID)
-      .eq("local_date", todayLocal)
-      .limit(1);
+      const { data: todayRows, error: todayErr } = await supabase
+        .from("v_yes_counts_today")
+        .select("local_date, total_yes")
+        .eq("park_id", PARK_ID)
+        .eq("local_date", todayLocal)
+        .limit(1);
 
-    if (todayErr) throw todayErr;
+      if (todayErr) throw todayErr;
 
-    const now = new Date();
-    const day = now.getDay(); // Sun=0, Mon=1...
-    const diffToMon = (day + 6) % 7;
-    const monday = new Date(now);
-    monday.setDate(now.getDate() - diffToMon);
+      const now = new Date();
+      const day = now.getDay(); // Sun=0, Mon=1...
+      const diffToMon = (day + 6) % 7;
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - diffToMon);
 
-    const y = monday.getFullYear();
-    const m = String(monday.getMonth() + 1).padStart(2, "0");
-    const d = String(monday.getDate()).padStart(2, "0");
-    const weekStartLocal = `${y}-${m}-${d}`;
+      const y = monday.getFullYear();
+      const m = String(monday.getMonth() + 1).padStart(2, "0");
+      const d = String(monday.getDate()).padStart(2, "0");
+      const weekStartLocal = `${y}-${m}-${d}`;
 
-    const { data: weekRows, error: weekErr } = await supabase
-      .from("v_yes_counts_week")
-      .select("week_start_local, total_yes")
-      .eq("park_id", PARK_ID)
-      .eq("week_start_local", weekStartLocal)
-      .limit(1);
+      const { data: weekRows, error: weekErr } = await supabase
+        .from("v_yes_counts_week")
+        .select("week_start_local, total_yes")
+        .eq("park_id", PARK_ID)
+        .eq("week_start_local", weekStartLocal)
+        .limit(1);
 
-    if (weekErr) throw weekErr;
+      if (weekErr) throw weekErr;
 
-    const todayVal = Number(todayRows?.[0]?.total_yes ?? 0);
-    const weekVal = Number(weekRows?.[0]?.total_yes ?? 0);
+      const todayVal = Number(todayRows?.[0]?.total_yes ?? 0);
+      const weekVal = Number(weekRows?.[0]?.total_yes ?? 0);
 
-    console.log("Setting odometers - today:", todayVal, "week:", weekVal);
-    setOdometer(todayOdoEl, todayVal, 4);
-    setOdometer(weekOdoEl, weekVal, 4);
+      setOdometer(todayOdoEl, todayVal, 4);
+      setOdometer(weekOdoEl, weekVal, 4);
 
-    return { todayVal, weekVal };
+      return { todayVal, weekVal };
+    } finally {
+      isFetching = false;
+    }
   }
 
   async function submit(sawDog) {
