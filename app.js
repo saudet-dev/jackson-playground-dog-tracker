@@ -55,6 +55,7 @@ buildOdometer(weekOdoEl, 4);
 
 function setOdometer(el, value, digits = 4) {
   if (!el) return;
+  console.log("setOdometer called for", el.id, "with value:", value);
   const str = padNumber(value, digits);
 
   let children = Array.from(el.querySelectorAll(".odo-digit"));
@@ -72,6 +73,7 @@ function setOdometer(el, value, digits = 4) {
 
     if (next === current) continue;
 
+    console.log(`  Digit ${i}: ${current} -> ${next}`);
     front.textContent = current;
     back.textContent = next;
 
@@ -79,7 +81,13 @@ function setOdometer(el, value, digits = 4) {
     void card.offsetWidth;
     card.classList.add("odo-flip");
 
+    // Update the dataset immediately
     d.dataset.value = next;
+    
+    // After animation completes, update front to match for next flip
+    setTimeout(() => {
+      front.textContent = next;
+    }, 350); // Animation is 320ms, so wait a bit longer
   }
 }
 
@@ -125,6 +133,7 @@ if (!window.supabase || typeof window.supabase.createClient !== "function") {
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   async function fetchCounts() {
+    console.log("fetchCounts called");
     const todayLocal = todayKeyLocal();
 
     const { data: todayRows, error: todayErr } = await supabase
@@ -159,6 +168,7 @@ if (!window.supabase || typeof window.supabase.createClient !== "function") {
     const todayVal = Number(todayRows?.[0]?.total_yes ?? 0);
     const weekVal = Number(weekRows?.[0]?.total_yes ?? 0);
 
+    console.log("Setting odometers - today:", todayVal, "week:", weekVal);
     setOdometer(todayOdoEl, todayVal, 4);
     setOdometer(weekOdoEl, weekVal, 4);
 
