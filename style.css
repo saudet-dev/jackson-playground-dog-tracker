@@ -253,38 +253,44 @@ h1 {
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.13);
 }
 
-.park-map-container {
+.park-shape-container {
   position: relative;
   width: 100%;
-  height: 180px;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
   overflow: hidden;
-  background: #e5e7eb;
 }
 
-.park-map {
-  width: 100%;
-  height: 100%;
-  border: 0;
-  pointer-events: none;
+.park-shape-container svg {
+  width: 85%;
+  height: 85%;
+  opacity: 0.85;
+  filter: drop-shadow(0 2px 4px rgba(22, 163, 74, 0.15));
 }
 
-.park-map-overlay {
+.park-shape-name {
   position: absolute;
   inset: 0;
-  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: #14532d;
+  padding: 16px;
+  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.8);
+  line-height: 1.2;
 }
 
 .park-info {
-  padding: 14px 16px;
+  padding: 10px 16px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-}
-
-.park-name {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
+  justify-content: flex-end;
 }
 
 .park-arrow {
