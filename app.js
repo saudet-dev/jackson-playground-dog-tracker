@@ -70,8 +70,7 @@ function setOdometer(el, value, digits = 4) {
     const next = str[i];
     const current = d.dataset.value;
 
-    if (next === current) continue;
-
+    // Always animate, even if value hasn't changed (for satisfying effect)
     front.textContent = current;
     back.textContent = next;
 
@@ -119,6 +118,10 @@ function showHome() {
   elHome.classList.remove("hidden");
   elAlready.classList.add("hidden");
   setStatus("");
+  
+  // Rebuild odometers from scratch at 0 so they're ready to animate fresh
+  buildOdometer(todayOdoEl, 4);
+  buildOdometer(weekOdoEl, 4);
 }
 
 // Verify Supabase library is loaded
@@ -134,10 +137,7 @@ if (!window.supabase || typeof window.supabase.createClient !== "function") {
   let isFetching = false;
 
   async function fetchCounts() {
-    if (isFetching) {
-      console.log("Already fetching, skipping duplicate call");
-      return;
-    }
+    if (isFetching) return; // Skip if already fetching
     
     isFetching = true;
     try {
