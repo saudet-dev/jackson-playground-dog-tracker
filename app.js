@@ -187,15 +187,17 @@ if (!window.supabase || typeof window.supabase.createClient !== "function") {
     showResult(sawDog ? MSG_YES : MSG_NO, sawDog ? alreadySubmittedYes : false);
     setStatus("");
 
-    if (sawDog) {
-      // YES: update odometer about 1 second later
-      setTimeout(() => {
-        fetchCounts().catch((e) => fatal(`Error: ${e?.message || e}`));
-      }, 1000);
-    } else {
-      // NO: show counts immediately (should not move unless totals changed)
-      await fetchCounts();
-    }
+  if (sawDog) {
+  if (!alreadySubmittedYes) {
+    setTimeout(() => {
+      fetchCounts().catch((e) => fatal(`Error: ${e?.message || e}`));
+    }, 1000);
+  } else {
+    await fetchCounts(); // no animation delay if it wasn't recorded
+  }
+} else {
+  await fetchCounts();
+}
   } catch (e) {
     console.error(e);
     fatal(`Error: ${e?.message || e}`);
