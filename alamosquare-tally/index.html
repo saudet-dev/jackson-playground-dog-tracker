@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Alamo Square Park — Dog Reports — SF Dog Tracker</title>
+    <link rel="stylesheet" href="../style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  </head>
+  <body>
+    <main class="wrap">
+      <header class="tally-header">
+        <h1>Alamo Square Park</h1>
+        <p class="subtitle">Dog sighting reports at Alamo Square Park</p>
+      </header>
+      <div class="tally-counts">
+        <div class="tally-box">
+          <div class="tally-label">Dogs seen today</div>
+          <div class="countValue"><div class="odometer" id="todayOdo"></div></div>
+        </div>
+        <div class="tally-box">
+          <div class="tally-label">Dogs seen this week</div>
+          <div class="countValue"><div class="odometer" id="weekOdo"></div></div>
+        </div>
+      </div>
+      <div class="tally-message">Reports are submitted anonymously by visitors at the park. To submit a report, scan the QR code posted near the park entrance.</div>
+      <a href="/" class="back-link">&larr; All Parks</a>
+    </main>
+    <script>const PARK_ID = "alamo_square_park";</script>
+    <script src="../tally.js"></script>
+  </body>
+</html>

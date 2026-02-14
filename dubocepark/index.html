@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Duboce Park — SF Dog Tracker</title>
+    <link rel="stylesheet" href="../style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  </head>
+  <body>
+    <main class="wrap">
+      <header class="header">
+        <h1>Duboce Park</h1>
+        <p class="subtitle">Did you see dogs today in Duboce Park?</p>
+      </header>
+      <section id="home" class="card">
+        <div class="btnRow">
+          <button id="yesBtn" class="btn btnYes" type="button">YES</button>
+          <button id="noBtn" class="btn btnNo" type="button">NO</button>
+        </div>
+        <p class="fineprint">This page records anonymous yes/no reports and displays totals for today and this week.</p>
+      </section>
+      <section id="result" class="card hidden" aria-live="polite">
+        <div class="counts">
+          <div class="countBox">
+            <div class="countLabel">Dogs seen today</div>
+            <div class="countValue"><div class="odometer" id="todayOdo"></div></div>
+          </div>
+          <div class="countBox">
+            <div class="countLabel">Dogs seen this week</div>
+            <div class="countValue"><div class="odometer" id="weekOdo"></div></div>
+          </div>
+        </div>
+        <p id="alreadyNote" class="note hidden">Already submitted today on this device.</p>
+        <p id="message" class="message"></p>
+        <button id="backBtn" class="btn btnBack" type="button">Back</button>
+      </section>
+      <div style="margin-top:16px"><a href="/" class="back-link">&larr; All Parks</a></div>
+    </main>
+    <script>const PARK_ID = "duboce_park";</script>
+    <script src="../app.js"></script>
+  </body>
+</html>
