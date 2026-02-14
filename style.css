@@ -145,6 +145,33 @@ h1 {
   overflow: hidden;
   background: #1b1b1b;
   border: 1px solid rgba(255,255,255,0.08);
+
+
+.odo-digit::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.08), rgba(255,255,255,0) 40%, rgba(0,0,0,0.20));
+  pointer-events: none;
+}
+  .odo-digit::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: rgba(255,255,255,0.10);
+  transform: translateY(-0.5px);
+}
+
+.odo-digit::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.08), rgba(255,255,255,0) 40%, rgba(0,0,0,0.20));
+  pointer-events: none;
+}
 }
 
 .odo-card {
