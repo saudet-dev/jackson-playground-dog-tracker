@@ -127,6 +127,8 @@ h1 {
 .hidden {
   display: none;
 }
+
+/* Odometer Styles */
 .odometer {
   display: inline-flex;
   gap: 6px;
@@ -145,16 +147,9 @@ h1 {
   overflow: hidden;
   background: #1b1b1b;
   border: 1px solid rgba(255,255,255,0.08);
-
-
-.odo-digit::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to bottom, rgba(255,255,255,0.08), rgba(255,255,255,0) 40%, rgba(0,0,0,0.20));
-  pointer-events: none;
 }
-  .odo-digit::after {
+
+.odo-digit::after {
   content: "";
   position: absolute;
   left: 0;
@@ -171,7 +166,7 @@ h1 {
   inset: 0;
   background: linear-gradient(to bottom, rgba(255,255,255,0.08), rgba(255,255,255,0) 40%, rgba(0,0,0,0.20));
   pointer-events: none;
-}
+  z-index: 1;
 }
 
 .odo-card {
@@ -190,10 +185,17 @@ h1 {
   backface-visibility: hidden;
 }
 
-.odo-front { transform: rotateX(0deg) translateZ(1px); }
-.odo-back  { transform: rotateX(180deg) translateZ(1px); }
+.odo-front { 
+  transform: rotateX(0deg) translateZ(1px); 
+}
 
-.odo-flip { animation: odoFlip 320ms ease-in-out; }
+.odo-back { 
+  transform: rotateX(180deg) translateZ(1px); 
+}
+
+.odo-flip { 
+  animation: odoFlip 320ms ease-in-out; 
+}
 
 @keyframes odoFlip {
   0% { transform: rotateX(0deg); }
@@ -201,6 +203,11 @@ h1 {
 }
 
 @media (max-width: 420px) {
-  .odo-digit { width: 24px; height: 40px; }
-  .odo-face { font-size: 26px; }
+  .odo-digit { 
+    width: 24px; 
+    height: 40px; 
+  }
+  .odo-face { 
+    font-size: 26px; 
+  }
 }
