@@ -49,6 +49,7 @@ function buildOdometer(el, digits) {
     el.appendChild(digit);
   }
 }
+
 buildOdometer(todayOdoEl, 4);
 buildOdometer(weekOdoEl, 4);
 
@@ -113,105 +114,105 @@ function showHome() {
   setStatus("");
 }
 
-// 1) Verify Supabase library is actually loaded
+// Verify Supabase library is loaded
 if (!window.supabase || typeof window.supabase.createClient !== "function") {
   fatal("Supabase failed to load. Check index.html script tag for the UMD build.");
-} else if (!SUPABASE_URL || !SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.includes("PASTE_")) {
-  fatal("Supabase keys are missing in app.js. Paste the sb_publishable key.");
+} else if (!SUPABASE_URL || !SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.includes("YOUR_")) {
+  fatal("Supabase keys are missing in app.js. Add your keys at the top of the file.");
 } else {
   setStatus("");
 
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
- async function fetchCounts() {
-  const todayLocal = todayKeyLocal();
+  async function fetchCounts() {
+    const todayLocal = todayKeyLocal();
 
-  const { data: todayRows, error: todayErr } = await supabase
-    .from("v_yes_counts_today")
-    .select("local_date, total_yes")
-    .eq("park_id", PARK_ID)
-    .eq("local_date", todayLocal)
-    .limit(1);
+    const { data: todayRows, error: todayErr } = await supabase
+      .from("v_yes_counts_today")
+      .select("local_date, total_yes")
+      .eq("park_id", PARK_ID)
+      .eq("local_date", todayLocal)
+      .limit(1);
 
-  if (todayErr) throw todayErr;
+    if (todayErr) throw todayErr;
 
-  const now = new Date();
-  const day = now.getDay(); // Sun=0, Mon=1...
-  const diffToMon = (day + 6) % 7;
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - diffToMon);
+    const now = new Date();
+    const day = now.getDay(); // Sun=0, Mon=1...
+    const diffToMon = (day + 6) % 7;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - diffToMon);
 
-  const y = monday.getFullYear();
-  const m = String(monday.getMonth() + 1).padStart(2, "0");
-  const d = String(monday.getDate()).padStart(2, "0");
-  const weekStartLocal = `${y}-${m}-${d}`;
+    const y = monday.getFullYear();
+    const m = String(monday.getMonth() + 1).padStart(2, "0");
+    const d = String(monday.getDate()).padStart(2, "0");
+    const weekStartLocal = `${y}-${m}-${d}`;
 
-  const { data: weekRows, error: weekErr } = await supabase
-    .from("v_yes_counts_week")
-    .select("week_start_local, total_yes")
-    .eq("park_id", PARK_ID)
-    .eq("week_start_local", weekStartLocal)
-    .limit(1);
+    const { data: weekRows, error: weekErr } = await supabase
+      .from("v_yes_counts_week")
+      .select("week_start_local, total_yes")
+      .eq("park_id", PARK_ID)
+      .eq("week_start_local", weekStartLocal)
+      .limit(1);
 
-  if (weekErr) throw weekErr;
+    if (weekErr) throw weekErr;
 
-  const todayVal = Number(todayRows?.[0]?.total_yes ?? 0);
-  const weekVal = Number(weekRows?.[0]?.total_yes ?? 0);
+    const todayVal = Number(todayRows?.[0]?.total_yes ?? 0);
+    const weekVal = Number(weekRows?.[0]?.total_yes ?? 0);
 
-  setOdometer(todayOdoEl, todayVal, 4);
-  setOdometer(weekOdoEl, weekVal, 4);
+    setOdometer(todayOdoEl, todayVal, 4);
+    setOdometer(weekOdoEl, weekVal, 4);
 
-  return { todayVal, weekVal };
-}
+    return { todayVal, weekVal };
+  }
 
- async function submit(sawDog) {
-  setStatus("Submitting...");
-  elYes.disabled = true;
-  elNo.disabled = true;
+  async function submit(sawDog) {
+    setStatus("Submitting...");
+    elYes.disabled = true;
+    elNo.disabled = true;
 
-  try {
-    // Only track "already submitted" for YES reports
-    const key = `submitted_yes:${PARK_ID}:${todayKeyLocal()}`;
-    const alreadySubmittedYes = localStorage.getItem(key) === "1";
+    try {
+      // Only track "already submitted" for YES reports
+      const key = `submitted_yes:${PARK_ID}:${todayKeyLocal()}`;
+      const alreadySubmittedYes = localStorage.getItem(key) === "1";
 
-    // YES inserts once per device per day. NO does not insert.
-    if (sawDog && !alreadySubmittedYes) {
-      const { error } = await supabase.from("sightings").insert([
-        { park_id: PARK_ID, saw_dog: true },
-      ]);
-      if (error) throw error;
-      localStorage.setItem(key, "1");
+      // YES inserts once per device per day. NO does not insert.
+      if (sawDog && !alreadySubmittedYes) {
+        const { error } = await supabase.from("sightings").insert([
+          { park_id: PARK_ID, saw_dog: true },
+        ]);
+        if (error) throw error;
+        localStorage.setItem(key, "1");
+      }
+
+      // Show the result screen immediately
+      showResult(sawDog ? MSG_YES : MSG_NO, sawDog ? alreadySubmittedYes : false);
+      setStatus("");
+
+      if (sawDog) {
+        if (!alreadySubmittedYes) {
+          setTimeout(() => {
+            fetchCounts().catch((e) => fatal(`Error: ${e?.message || e}`));
+          }, 1000);
+        } else {
+          await fetchCounts(); // no animation delay if it wasn't recorded
+        }
+      } else {
+        await fetchCounts();
+      }
+    } catch (e) {
+      console.error(e);
+      fatal(`Error: ${e?.message || e}`);
+    } finally {
+      elYes.disabled = false;
+      elNo.disabled = false;
     }
-
-    // Show the result screen immediately
-    showResult(sawDog ? MSG_YES : MSG_NO, sawDog ? alreadySubmittedYes : false);
-    setStatus("");
-
-  if (sawDog) {
-  if (!alreadySubmittedYes) {
-    setTimeout(() => {
-      fetchCounts().catch((e) => fatal(`Error: ${e?.message || e}`));
-    }, 1000);
-  } else {
-    await fetchCounts(); // no animation delay if it wasn't recorded
   }
-} else {
-  await fetchCounts();
-}
-  } catch (e) {
-    console.error(e);
-    fatal(`Error: ${e?.message || e}`);
-  } finally {
-    elYes.disabled = false;
-    elNo.disabled = false;
-  }
-}
 
-  // 2) Verify click handlers attach
+  // Attach click handlers
   elYes.addEventListener("click", () => submit(true));
   elNo.addEventListener("click", () => submit(false));
   elBack.addEventListener("click", showHome);
 
-  // 3) Load counts immediately
+  // Load counts immediately on page load
   fetchCounts().then(() => setStatus("")).catch((e) => fatal(`Error: ${e?.message || e}`));
 }
