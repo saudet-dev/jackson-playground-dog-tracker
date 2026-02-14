@@ -241,11 +241,14 @@ h1 {
   display: block;
   text-decoration: none;
   color: inherit;
-  background: var(--clr-card);
-  border-radius: 14px;
-  overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  text-align: center;
+  padding: 16px 8px;
+  border-radius: 12px;
+  transition: background 0.2s ease;
+}
+
+.park-card:hover {
+  background: rgba(74, 222, 128, 0.08);
 }
 
 .park-card:hover {
@@ -264,40 +267,27 @@ h1 {
   overflow: hidden;
 }
 
-.park-shape-container svg {
-  width: 85%;
-  height: 85%;
-  opacity: 0.85;
-  filter: drop-shadow(0 2px 4px rgba(22, 163, 74, 0.15));
+.park-card:hover .park-shape svg {
+  transform: scale(1.05);
 }
 
-.park-shape-name {
-  position: absolute;
-  inset: 0;
+.park-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--clr-text);
+  margin-bottom: 6px;
+}
+
+.park-shape {
   display: flex;
-  align-items: center;
   justify-content: center;
-  text-align: center;
-  font-size: 18px;
-  font-weight: 700;
-  color: #14532d;
-  padding: 16px;
-  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.8);
-  line-height: 1.2;
 }
 
-.park-info {
-  padding: 10px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.park-arrow {
-  font-size: 13px;
-  color: var(--clr-accent);
-  white-space: nowrap;
-  font-weight: 500;
+.park-shape svg {
+  width: 180px;
+  height: 140px;
+  filter: drop-shadow(0 3px 6px rgba(22, 163, 74, 0.2));
+  transition: transform 0.2s ease;
 }
 
 /* Tally Page */

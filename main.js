@@ -26,12 +26,9 @@ function createParkCard(park) {
   card.href = `${park.slug}-tally/`;
   card.className = "park-card";
   card.innerHTML = `
-    <div class="park-shape-container">
+    <div class="park-label">${park.name}</div>
+    <div class="park-shape">
       ${park.svg}
-      <div class="park-shape-name">${park.name}</div>
-    </div>
-    <div class="park-info">
-      <span class="park-arrow">View reports &rarr;</span>
     </div>
   `;
   return card;
