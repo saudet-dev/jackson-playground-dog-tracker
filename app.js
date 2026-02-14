@@ -188,16 +188,18 @@ if (!window.supabase || typeof window.supabase.createClient !== "function") {
       showResult(sawDog ? MSG_YES : MSG_NO, sawDog ? alreadySubmittedYes : false);
       setStatus("");
 
-      if (sawDog) {
-        if (!alreadySubmittedYes) {
-          setTimeout(() => {
-            fetchCounts().catch((e) => fatal(`Error: ${e?.message || e}`));
-          }, 1000);
-        } else {
-          await fetchCounts(); // no animation delay if it wasn't recorded
-        }
+      // Fetch counts AFTER showing result page so odometer is visible during animation
+      if (sawDog && !alreadySubmittedYes) {
+        // Give database a moment to process the insert, then animate
+        setTimeout(() => {
+          fetchCounts().catch((e) => fatal(`Error: ${e?.message || e}`));
+        }, 800);
       } else {
-        await fetchCounts();
+        // For NO clicks or repeat YES clicks, fetch immediately
+        // Use a tiny delay to ensure the result page is rendered first
+        setTimeout(() => {
+          fetchCounts().catch((e) => fatal(`Error: ${e?.message || e}`));
+        }, 50);
       }
     } catch (e) {
       console.error(e);
@@ -213,6 +215,6 @@ if (!window.supabase || typeof window.supabase.createClient !== "function") {
   elNo.addEventListener("click", () => submit(false));
   elBack.addEventListener("click", showHome);
 
-  // Load counts immediately on page load
-  fetchCounts().then(() => setStatus("")).catch((e) => fatal(`Error: ${e?.message || e}`));
+  // Don't fetch counts on page load - odometers start at 0 
+  // and will be updated when user clicks YES/NO
 }
