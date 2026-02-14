@@ -1,6 +1,13 @@
 const SUPABASE_URL = "https://dlhlauphqwsnchdrfbia.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_PDHGD4lP_shj-5L5mjUALg_dAzQjaLz";
 
+// ============================================================
+// ADD YOUR SUPABASE KEYS HERE:
+// ============================================================
+const SUPABASE_URL = "YOUR_SUPABASE_URL";
+const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+// ============================================================
+
 const PARK_ID = "jackson_playground_park";
 
 const MSG_YES =
@@ -23,6 +30,9 @@ function padNumber(n, width) {
   const s = String(Math.max(0, n));
   return s.length >= width ? s : "0".repeat(width - s.length) + s;
 }
+
+// Track timeouts so we can clear them when needed
+let odometerTimeouts = [];
 
 function buildOdometer(el, digits) {
   if (!el) return;
@@ -82,10 +92,12 @@ function setOdometer(el, value, digits = 4) {
     d.dataset.value = next;
     
     // After animation completes, update front face and remove animation class
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       front.textContent = next;
       card.classList.remove("odo-flip"); // Remove animation class so it's ready for next flip
     }, 350); // Animation is 320ms, so wait a bit longer
+    
+    odometerTimeouts.push(timeoutId);
   }
 }
 
@@ -118,6 +130,10 @@ function showHome() {
   elHome.classList.remove("hidden");
   elAlready.classList.add("hidden");
   setStatus("");
+  
+  // Clear any pending odometer update timeouts to prevent glitches
+  odometerTimeouts.forEach(id => clearTimeout(id));
+  odometerTimeouts = [];
   
   // Rebuild odometers from scratch at 0 so they're ready to animate fresh
   buildOdometer(todayOdoEl, 4);
