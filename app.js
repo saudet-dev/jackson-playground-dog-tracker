@@ -15,9 +15,72 @@ const elNo = document.getElementById("noBtn");
 const elBack = document.getElementById("backBtn");
 const elMsg = document.getElementById("message");
 const elStatus = document.getElementById("status");
-const elToday = document.getElementById("todayCount");
-const elWeek = document.getElementById("weekCount");
+const todayOdoEl = document.getElementById("todayOdo");
+const weekOdoEl = document.getElementById("weekOdo");
 const elAlready = document.getElementById("alreadyNote");
+
+function padNumber(n, width) {
+  const s = String(Math.max(0, n));
+  return s.length >= width ? s : "0".repeat(width - s.length) + s;
+}
+
+function buildOdometer(el, digits) {
+  if (!el) return;
+  el.innerHTML = "";
+  for (let i = 0; i < digits; i++) {
+    const digit = document.createElement("div");
+    digit.className = "odo-digit";
+    digit.dataset.value = "0";
+
+    const card = document.createElement("div");
+    card.className = "odo-card";
+
+    const front = document.createElement("div");
+    front.className = "odo-face odo-front";
+    front.textContent = "0";
+
+    const back = document.createElement("div");
+    back.className = "odo-face odo-back";
+    back.textContent = "0";
+
+    card.appendChild(front);
+    card.appendChild(back);
+    digit.appendChild(card);
+    el.appendChild(digit);
+  }
+}
+buildOdometer(todayOdoEl, 4);
+buildOdometer(weekOdoEl, 4);
+
+function setOdometer(el, value, digits = 4) {
+  if (!el) return;
+  const str = padNumber(value, digits);
+
+  let children = Array.from(el.querySelectorAll(".odo-digit"));
+  if (children.length !== digits) buildOdometer(el, digits);
+
+  children = Array.from(el.querySelectorAll(".odo-digit"));
+  for (let i = 0; i < digits; i++) {
+    const d = children[i];
+    const card = d.querySelector(".odo-card");
+    const front = d.querySelector(".odo-front");
+    const back = d.querySelector(".odo-back");
+
+    const next = str[i];
+    const current = d.dataset.value;
+
+    if (next === current) continue;
+
+    front.textContent = current;
+    back.textContent = next;
+
+    card.classList.remove("odo-flip");
+    void card.offsetWidth;
+    card.classList.add("odo-flip");
+
+    d.dataset.value = next;
+  }
+}
 
 function setStatus(text) {
   if (elStatus) elStatus.textContent = text || "";
@@ -60,70 +123,87 @@ if (!window.supabase || typeof window.supabase.createClient !== "function") {
 
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  async function fetchCounts() {
-    const todayLocal = todayKeyLocal();
+ async function fetchCounts() {
+  const todayLocal = todayKeyLocal();
 
-    const { data: todayRows, error: todayErr } = await supabase
-      .from("v_yes_counts_today")
-      .select("local_date, total_yes")
-      .eq("park_id", PARK_ID)
-      .eq("local_date", todayLocal)
-      .limit(1);
+  const { data: todayRows, error: todayErr } = await supabase
+    .from("v_yes_counts_today")
+    .select("local_date, total_yes")
+    .eq("park_id", PARK_ID)
+    .eq("local_date", todayLocal)
+    .limit(1);
 
-    if (todayErr) throw todayErr;
+  if (todayErr) throw todayErr;
 
-    const now = new Date();
-    const day = now.getDay(); // Sun=0, Mon=1...
-    const diffToMon = (day + 6) % 7;
-    const monday = new Date(now);
-    monday.setDate(now.getDate() - diffToMon);
+  const now = new Date();
+  const day = now.getDay(); // Sun=0, Mon=1...
+  const diffToMon = (day + 6) % 7;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - diffToMon);
 
-    const y = monday.getFullYear();
-    const m = String(monday.getMonth() + 1).padStart(2, "0");
-    const d = String(monday.getDate()).padStart(2, "0");
-    const weekStartLocal = `${y}-${m}-${d}`;
+  const y = monday.getFullYear();
+  const m = String(monday.getMonth() + 1).padStart(2, "0");
+  const d = String(monday.getDate()).padStart(2, "0");
+  const weekStartLocal = `${y}-${m}-${d}`;
 
-    const { data: weekRows, error: weekErr } = await supabase
-      .from("v_yes_counts_week")
-      .select("week_start_local, total_yes")
-      .eq("park_id", PARK_ID)
-      .eq("week_start_local", weekStartLocal)
-      .limit(1);
+  const { data: weekRows, error: weekErr } = await supabase
+    .from("v_yes_counts_week")
+    .select("week_start_local, total_yes")
+    .eq("park_id", PARK_ID)
+    .eq("week_start_local", weekStartLocal)
+    .limit(1);
 
-    if (weekErr) throw weekErr;
+  if (weekErr) throw weekErr;
 
-    elToday.textContent = String(todayRows?.[0]?.total_yes ?? 0);
-    elWeek.textContent = String(weekRows?.[0]?.total_yes ?? 0);
-  }
+  const todayVal = Number(todayRows?.[0]?.total_yes ?? 0);
+  const weekVal = Number(weekRows?.[0]?.total_yes ?? 0);
 
-  async function submit(sawDog) {
-    setStatus("Submitting...");
-    elYes.disabled = true;
-    elNo.disabled = true;
+  setOdometer(todayOdoEl, todayVal, 4);
+  setOdometer(weekOdoEl, weekVal, 4);
 
-    try {
-      const key = `submitted:${PARK_ID}:${todayKeyLocal()}`;
-      const alreadySubmitted = localStorage.getItem(key) === "1";
+  return { todayVal, weekVal };
+}
 
-      if (!alreadySubmitted) {
-        const { error } = await supabase.from("sightings").insert([
-          { park_id: PARK_ID, saw_dog: sawDog },
-        ]);
-        if (error) throw error;
-        localStorage.setItem(key, "1");
-      }
+ async function submit(sawDog) {
+  setStatus("Submitting...");
+  elYes.disabled = true;
+  elNo.disabled = true;
 
-      await fetchCounts();
-      showResult(sawDog ? MSG_YES : MSG_NO, alreadySubmitted);
-      setStatus("");
-    } catch (e) {
-      console.error(e);
-      fatal(`Error: ${e?.message || e}`);
-    } finally {
-      elYes.disabled = false;
-      elNo.disabled = false;
+  try {
+    // Only track "already submitted" for YES reports
+    const key = `submitted_yes:${PARK_ID}:${todayKeyLocal()}`;
+    const alreadySubmittedYes = localStorage.getItem(key) === "1";
+
+    // YES inserts once per device per day. NO does not insert.
+    if (sawDog && !alreadySubmittedYes) {
+      const { error } = await supabase.from("sightings").insert([
+        { park_id: PARK_ID, saw_dog: true },
+      ]);
+      if (error) throw error;
+      localStorage.setItem(key, "1");
     }
+
+    // Show the result screen immediately
+    showResult(sawDog ? MSG_YES : MSG_NO, sawDog ? alreadySubmittedYes : false);
+    setStatus("");
+
+    if (sawDog) {
+      // YES: update odometer about 1 second later
+      setTimeout(() => {
+        fetchCounts().catch((e) => fatal(`Error: ${e?.message || e}`));
+      }, 1000);
+    } else {
+      // NO: show counts immediately (should not move unless totals changed)
+      await fetchCounts();
+    }
+  } catch (e) {
+    console.error(e);
+    fatal(`Error: ${e?.message || e}`);
+  } finally {
+    elYes.disabled = false;
+    elNo.disabled = false;
   }
+}
 
   // 2) Verify click handlers attach
   elYes.addEventListener("click", () => submit(true));
